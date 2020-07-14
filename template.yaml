@@ -95,11 +95,114 @@ Resources:
                 type: aws_proxy
                 uri: !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${newItem.Arn}/invocations
               responses: {}
+          /items/{id):
+            put:
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri: !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${updateItem.Arn}/invocations
+              responses: {}
+            delete:
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri: !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${deleteItem.Arn}/invocations
+              responses: {}
+            get:
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri: !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${getItem.Arn}/invocations
+              responses: {}
       EndpointConfiguration: REGIONAL
       TracingEnabled: true
       Cors:
         AllowHeaders: '''Authorization,Content-Type'''
         AllowOrigin: '''*'''
+  updateItem:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-updateItem
+      Description: !Sub
+        - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - ResourceName: updateItem
+      CodeUri: src/updateItem
+      Handler: index.handler
+      Runtime: nodejs12.x
+      MemorySize: 3008
+      Timeout: 30
+      Tracing: Active
+      Policies:
+        - AWSXrayWriteOnlyAccess
+        - DynamoDBCrudPolicy:
+            TableName: !Ref Items
+      Events:
+        QuickstartApiPUTitemsid:
+          Type: Api
+          Properties:
+            Path: /items/{id)
+            Method: PUT
+            RestApiId: !Ref QuickstartApi
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref Items
+          TABLE_ARN: !GetAtt Items.Arn
+  deleteItem:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-deleteItem
+      Description: !Sub
+        - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - ResourceName: deleteItem
+      CodeUri: src/deleteItem
+      Handler: index.handler
+      Runtime: nodejs12.x
+      MemorySize: 3008
+      Timeout: 30
+      Tracing: Active
+      Policies:
+        - AWSXrayWriteOnlyAccess
+        - DynamoDBCrudPolicy:
+            TableName: !Ref Items
+      Events:
+        QuickstartApiDELETEitemsid:
+          Type: Api
+          Properties:
+            Path: /items/{id)
+            Method: DELETE
+            RestApiId: !Ref QuickstartApi
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref Items
+          TABLE_ARN: !GetAtt Items.Arn
+  getItem:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-getItem
+      Description: !Sub
+        - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - ResourceName: getItem
+      CodeUri: src/getItem
+      Handler: index.handler
+      Runtime: nodejs12.x
+      MemorySize: 3008
+      Timeout: 30
+      Tracing: Active
+      Policies:
+        - AWSXrayWriteOnlyAccess
+        - DynamoDBCrudPolicy:
+            TableName: !Ref Items
+      Events:
+        QuickstartApiGETitemsid:
+          Type: Api
+          Properties:
+            Path: /items/{id)
+            Method: GET
+            RestApiId: !Ref QuickstartApi
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref Items
+          TABLE_ARN: !GetAtt Items.Arn
 Parameters:
   StackTagName:
     Type: String
